@@ -14,23 +14,23 @@ from Debug import pyDebugger
 
 class pySerialPort:
 
-    #to keep all our serial info clean
-    spInfo = SerialPortHandler
-
-    def __init__(self):
+    def __init__(self,p=None,pf="/dev/ttyAMA0",pb=9600,pp=serial.PARITY_NONE,pbs=serial.EIGHTBITS,
+                    psb=serial.STOPBITS_ONE,pt=5,pfc=False,phs=False,Debug=True,LogToFile=False):
         #Set debugging options here!
         self.Debugger = pyDebugger(self,True,False)
-        
         self.Debugger.Log("Initializing Serial Port...", endd = "")
-        self.spInfo.Port = serial.Serial(self.spInfo.PortFile,)
-        
-        self.Debugger.Log("Starting Serial Port...")
+        try:
+            self.spH = SerialPortHandler(p,pf,pb,pp,pbs,psb,pt,pfc,phs,Debug,LogToFile)
+            self.Debugger.Log("...Success!")
+        except e as Exception:
+            self.Debugger.Log("...Failed!\n" + str(e))
+
 
 
 class SerialPortHandler():
 
     def __init__(self,p=None,pf="/dev/ttyAMA0",pb=9600,pp=serial.PARITY_NONE,pbs=serial.EIGHTBITS,
-                    psb=serial.STOPBITS_ONE,pt=5,pfc=False,phs=False):
+                    psb=serial.STOPBITS_ONE,pt=5,pfc=False,phs=False,Debug=True,LogToFile=False):
         #Variables 
         self.Port = p
         self.PortFile = pf
@@ -41,7 +41,14 @@ class SerialPortHandler():
         self.PortTimeout = pt
         self.PortFlowControl = pfc
         self.PortHandshake = phs
+        
+        #check if our port is already there
+        if p = None:
+            #try to initialize
 
     # a quick way to get settings loaded into the class
     def LoadSettings():
     
+    
+    def Open():
+        self.Port = serial.Serial(self.PortFile,)
