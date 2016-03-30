@@ -1,0 +1,33 @@
+#############################################################
+# Title: Python GiTSSerial Class Documenation               #
+# Description: Documentation for the Got iT Services Serial #
+#              python class                                 #
+# Version:                                                  #
+#   * Document Version 1.0 03/30/2016 RC                    #
+#                                                           #
+# Author: Richard Cintorino (c) Richard Cintorino 2016      #
+#############################################################
+
+pyGiTSSerial Class
+
+    Usage: 
+
+    from Debug import pyDebugger
+    self.Debugger = pyDebugger(self, Debug=False,LogToFile=False)
+    self.Debugger.Log(sString, endd='\n')
+
+    __init__ Variables:
+        Debug (True | False):
+            True: Display all debug information to stdout
+            False: Display only critical Log based errors to stdout
+  
+        LogToFile (True | False):
+            True: Log all output to /var/log/
+            False: Log nothing to file
+            
+            
+    Log Variables:
+        sString:
+            Arbitrary message to log
+        endd (defaul '\n'):
+            Optional ending string parameter, can be used to write more than once to a single line
