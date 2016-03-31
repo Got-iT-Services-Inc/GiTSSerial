@@ -10,8 +10,12 @@
 #############################################################
 
 import serial
+import threading
 import queue
 from Debug import pyDebugger
+from serial import FIVEBITS,SIXBITS,SEVENBITS,EIGHTBITS, PARITY_NONE, PARITY_EVEN,PARITY_ODD,
+    PARITY_MARK,PARITY_SPACE,STOPBITS_ONE,STOPBITS_ONE_POINT_FIVE,STOPBITS_TWO
+
 
 _ISVALID = 1
 _NOTVALID = 0
@@ -22,22 +26,7 @@ _ALREADYOPENED = 2
 
 class pySerialPort:
 
-    def __init__(self,p=None,pf="/dev/ttyAMA0",pb=9600,pp=serial.PARITY_NONE,pbs=serial.EIGHTBITS,
-                    psb=serial.STOPBITS_ONE,pt=5,pfc=False,phs=False,Debug=True,LogToFile=False):
-        #Set debugging options here!
-        self.Debugger = pyDebugger(self,True,False)
-        self.Debugger.Log("Initializing Serial Port...", endd = "")
-        try:
-            self.spH = SerialPortHandler(p,pf,pb,pp,pbs,psb,pt,pfc,phs,Debug,LogToFile)
-            self.Debugger.Log("...Success!")
-        except e as Exception:
-            self.Debugger.Log("...Failed!\n" + str(e))
-
-
-
-class SerialPortHandler():
-
-    def __init__(self,p=None,pf="/dev/ttyAMA0",pb=9600,pp=serial.PARITY_NONE,pbs=serial.EIGHTBITS,
+    def __init__(self,p=None,pf="/dev/ttyAMA0",pb=9600,pp=PARITY_NONE,pbs=EIGHTBITS,
                     psb=serial.STOPBITS_ONE,pt=None,pfc=False,phs=False,Debug=True,LogToFile=False,
                     AutoConnect=False):
         self.isValid = _UNTESTED
@@ -150,19 +139,111 @@ class SerialPortHandler():
 
     def Read(self,bs=1,bBlocking=True,pParent=None):
         if bBlocking == False:
-            self.Debugger.Log("Attempting to read line from port '" + self.PortFile + "' while not blocking...")
+            self.Debugger.Log("Attempting to read '" + str(bs) + "' bytes from port '" + 
+                self.PortFile + "' while not blocking...")
+            threading.Thread(target=_ReadNB, args=(bytes=bs,tParent=pParent)).start()
         else:
-            self.Debugger.Log("Attempting to read from port '" + self.PortFile + "'...", endd="")
-            sTmp = self.Port.read(bs)
+            self.Debugger.Log("Attempting to read '" + str(bs) + "' bytes from port '" + 
+                self.PortFile + "'...")
+            try:
+                sTmp = self.Port.read(bs)
+            except e as serial.SerialException:
+                self.Debugger.Log("Error: " + str(e))
+                return None
+                
             self.Debugger.Log("Read " + str(bs) + " byte: " + str(sTmp)
             return sTmp
             
             
             
+    def _ReadNB(self,bytes=1,tParent=None):
+        if tParent == None:
+            self.Debugger.Log ("Can't read non blocking because parent is 'None'")
+            return
+        self.Debugger.Log("Attempting to read '" + str(bs) + "' bytes from port '" + self.PortFile +
+            "' in new thread...")
+        try:
+            sTmp = self.Port.read(bs)
+        except e as serial.SerialException:
+            self.Debugger.Log("Error: " + str(e))
+            tParent.ReadData = None
+            
+        self.Debugger.Log("Read " + str(bs) + " byte: " + str(sTmp)
+        tParent.ReadData = sTmp
+        
+        #Add our call back to our main queue
+        tParent.ReadCallBack()
         
         
+    def ReadLine(self,bBlocking=True,pParent=None):
+        if bBlocking == False:
+            self.Debugger.Log("Attempting to read line from port '" + self.PortFile + 
+                "' while not blocking...")
+            threading.Thread(target=_ReadLineNB, args=(tParent=pParent)).start()
+        else:
+            self.Debugger.Log("Attempting to read from port '" + self.PortFile + "'...")
+            try:
+                sTmp = self.Port.readline()
+            except e as serial.SerialException:
+                self.Debugger.Log("Error: " + str(e))
+                return None
+                
+            self.Debugger.Log("Read: " + str(sTmp)
+            return sTmp
+            
+            
+            
+    def _ReadLineNB(self,tParent=None):
+        if tParent == None:
+            self.Debugger.Log ("Can't read non blocking because parent is 'None'")
+            return
+        self.Debugger.Log("Attempting to read from port '" + self.PortFile + "' in new thread...")
+        try:
+            sTmp = self.Port.readline()
+        except e as serial.SerialException:
+            self.Debugger.Log("Error: " + str(e))
+            tParent.ReadData = None
+            
+        self.Debugger.Log("Read: " + str(sTmp)
+        tParent.ReadData = sTmp
         
+        #Add our call back to our main queue
+        tParent.ReadCallBack()
         
+    def Write(self,sData, bBlocking=True,pParent=None):
+        if bBlocking == False:
+            self.Debugger.Log("Attempting to write to port '" + self.PortFile + 
+                "' while not blocking...")
+            threading.Thread(target=_WriteNB, args=(_sData=sData,tParent=pParent)).start()
+        else:
+            self.Debugger.Log("Attempting to write to port '" + self.PortFile + "'...")
+            try:
+                sTmp = self.Port.write(sData)
+            except e as serial.SerialException:
+                self.Debugger.Log("Error: " + str(e))
+                return None
+                
+            self.Debugger.Log("Wrote '" + str(sTmp) + "' bytes")
+            return sTmp
+            
+            
+            
+    def _WriteNB(self,_sData,tParent=None):
+        if tParent == None:
+            self.Debugger.Log ("Can't write non blocking because parent is 'None'")
+            return
+        self.Debugger.Log("Attempting to write to port '" + self.PortFile + "' in new thread...")
+        try:
+            sTmp = self.Port.write(_sData)
+        except e as serial.SerialException:
+            self.Debugger.Log("Error: " + str(e))
+            tParent.ReadData = None
+            
+        self.Debugger.Log("Wrote '" + str(sTmp) + "' bytes")
+        tParent.WriteData = sTmp
+        
+        #Add our call back to our main queue
+        tParent.WriteCallBack()
         
         
         

@@ -12,22 +12,151 @@ pyGiTSSerial Class
 
     Usage: 
 
-    from Debug import pyDebugger
-    self.Debugger = pyDebugger(self, Debug=False,LogToFile=False)
-    self.Debugger.Log(sString, endd='\n')
+    from SerialPort import pySerialPort
+    self.SP = pySerialPort(self, p=None,pf="/dev/ttyAMA0",pb=9600,pp=serial.PARITY_NONE,
+                    pbs=serial.EIGHTBITS,psb=serial.STOPBITS_ONE,pt=5,pfc=False,phs=False,
+                    Debug=True,LogToFile=False,AutoConnect=False):
+    
+    self.SP.Close() # Close port
+    
+    self.SP.LoadSettings # pass dict to SP to load settings
+    
+    self.SP.Open() # Optional, if AutoConnect=False on initialization
+    
+    Data = self.SP.Read(bs=8) #Blocking read 8 bytes
+    
+    self.SP.Read(bs=8 pParent=self,bBlocking=False) #Non-blocking read 8 bytes
+    #The above function requries the partent to use queue loop. It also requires
+    #   the parent to have a variable "ReadData", and a function "ReadCallBack". The
+    #   "ReadCallBack" function is used to process the data received
+    
+    Data = self.SP.ReadLine() #Blocking read until newline
+    
+    self.SP.ReadLine(pParent=self,bBlocking=False) #Non-blocking read until newline
+    #The above function requries the partent to use queue loop. It also requires
+    #   the parent to have a variable "ReadData", and a function "ReadCallBack". The
+    #   "ReadCallBack" function is used to process the data received
+    
+    #Note: If "ReadCallBack" doesn't need to operate within the same thread, queue is not required
+    
+    Bytes = self.SP.Write(sData, bBlocking=True,pParent=None) #Blocking write until finished
+    #Returns number of bytes written
+    
+    self.SP.Write(pParent=self,bBlocking=False) #Non-blocking write until finished
+    #The above function requries the partent to use queue loop. It also requires
+    #   the parent to have a variable "WriteData", and a function "WriteCallBack". The
+    #   "WriteCallBack" function is used to process the data received
+    
+    #Note: If "WriteCallBack" doesn't need to operate within the same thread, queue is not required
 
     __init__ Variables:
-        Debug (True | False):
-            True: Display all debug information to stdout
-            False: Display only critical Log based errors to stdout
+    
+        p (default None):
+            pass existing serial port to pySerialPort
+        
+        pf (default "/dev/ttyAMA0"):
+            file of serial port
+        
+        pb (default 9600):
+            Baudrate to set serial port to
+        
+        pp (default PARITY_NONE): Set the parity of the serial port
+            PARITY_NONE: No Parity
+            PARITY_EVEN: Even Pariy
+            PARITY_ODD: Odd Parity
+            PARITY_MARK: Mark Parity
+            PARITY_SPACE: Space Parity
+        
+        pbs (default EIGHTBITS): Set the number of bits in a byte for communication
+            FIVEBITS: Byte is 5 bits
+            SIXBITS: Byte is 6 bits
+            SEVENBITS: Byte is 7 bits
+            EIGHTBITS Byte is 8 bits
+        
+        psb (default STOPBITS_ONE): set the number of bits to represent stop
+            STOPBITS_ONE: 1 stop bit
+            STOPBITS_ONE_POINT_FIVE: 1.5 stop bits
+            STOPBITS_TWO: 2 stop bits
+              
+        pt (default None):
+            Serial port timeout, default blocks forever
+        
+        pfc (default False): enable/disable serial port flow control
+            True: xonxoff flow control
+            False: no flow control       
+        
+        phs (default False): enable/disable serial port handshake
+            True: rtscts and dsrdtr control enabled
+            False: no handshake
+        
+        Debug (default True):
+            True: Log all output to stdout
+            False: Log nothing to stdout       
   
         LogToFile (True | False):
             True: Log all output to /var/log/
             False: Log nothing to file
+        
+        AutoConnect (default False)
+            True: automatically initialize and open serial port
+            False: initialize but do not open
             
+    LoadSettings Variables:
+    
+        dDict: Dictonary with key=>value pairs that match internal variable names
+        
+    Read Variables:
+        
+        bs (default 1):
+            Number of bytes to read
+        
+        bBlocking (default True):
+            True: Read is blocking, 
+            False: Read is done in separate thread with call back
             
-    Log Variables:
-        sString:
-            Arbitrary message to log
-        endd (defaul '\n'):
-            Optional ending string parameter, can be used to write more than once to a single line
+        pParent (default None):
+            Parent class with "ReadCallback" function and "ReadData" Variable
+        
+    ReadLine Variables:
+        
+        bBlocking (default True):
+            True: Read is blocking, 
+            False: Read is done in separate thread with call back
+        
+        pParent (default None):
+            Parent class with "ReadCallback" function and "ReadData" Variable
+            
+    Write Variables:
+        
+        bBlocking (default True):
+            True: Write is blocking, 
+            False: Write is done in separate thread with call back
+        
+        pParent (default None):
+            Parent class with "WriteCallback" function and "WriteData" Variable
+                
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
