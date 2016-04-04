@@ -13,8 +13,8 @@ import serial
 import threading
 import queue
 from Debug import pyDebugger
-from serial import FIVEBITS,SIXBITS,SEVENBITS,EIGHTBITS, PARITY_NONE, PARITY_EVEN,PARITY_ODD,
-    PARITY_MARK,PARITY_SPACE,STOPBITS_ONE,STOPBITS_ONE_POINT_FIVE,STOPBITS_TWO
+from serial import (FIVEBITS,SIXBITS,SEVENBITS,EIGHTBITS, PARITY_NONE, PARITY_EVEN,PARITY_ODD,
+    PARITY_MARK,PARITY_SPACE,STOPBITS_ONE,STOPBITS_ONE_POINT_FIVE,STOPBITS_TWO)
 
 
 _ISVALID = 1
@@ -48,37 +48,36 @@ class pySerialPort:
             self.Port = serial.Serial(pf,pb,pbs,pp,psb,pt,pfc,phs,pt,phs)
             self.Port.port = pf
             self.isValid = _UNTESTED
-            self.Debugger.Log("...Success!)
+            self.Debugger.Log("...Success!")
         else:
             try:
                 self.Port = serial.Serial(None,pb,pbs,pp,psb,pt,pfc,phs,pt,phs)
                 self.isValid = _ISVALID    
-                self.Debugger.Log("...Success!)
-            except e as serial.SerialException:
-                self.Debugger.Log("...Failed!)
+                self.Debugger.Log("...Success!")
+            except e as Exception:
+                self.Debugger.Log("...Failed!")
                 self.Debugger.Log(str(e))
                 self.isValid = _NOTVALID 
             
             
     def Close(self):
-        try:
-            self.Debugger.Log("Attempting to close port " + self.PortFile + "...", endd='')
-            if self.Port == None:
-                self.Debugger.Log("...Warning! Nothing to close, port is null...reporting True")
+        self.Debugger.Log("Attempting to close port " + self.PortFile + "...", endd='')
+        if self.Port == None:
+            self.Debugger.Log("...Warning! Nothing to close, port is null...reporting True")
+            #count as true cause nothing to close!
+            return True
+        else:
+            try:
+                self.Port.close()
+                self.Debugger.Log("...Port successfully closed")
                 #count as true cause nothing to close!
                 return True
-            else:
-                try:
-                    self.Port.close()
-                    self.Debugger.Log("...Port successfully closed")
-                    #count as true cause nothing to close!
-                    return True
-                except e as serial.SerialException:
-                    self.Debugger.Log("...Failed!")
-                    self.Debugger.Log(str(e))
-                    return False
-                    
+            except e as Exception:
+                self.Debugger.Log("...Failed!")
+                self.Debugger.Log(str(e))
+                return False
             
+
     # a quick way to get settings loaded into the class
     def LoadSettings(self,dDict):
         self.Debugger.Log("Attempting to load settings...")
@@ -103,10 +102,10 @@ class pySerialPort:
                 self.PortStopBits,self.PortParity,self.PortStopBits,self.PortTimeout,
                 self.PortFlowControl,self.PortHandShake,self.PortTimeout,self.PortHandShake)
                 self.isValid = _ISVALID
-                self.Debugger.Log("...Success!)
+                self.Debugger.Log("...Success!")
                 return _OPEN 
-            except e as serial.SerialException:
-                self.Debugger.Log("...Failed!)
+            except e as Exception:
+                self.Debugger.Log("...Failed!")
                 self.Debugger.Log(str(e))
                 self.isValid = _NOTVALID
                 return _CLOSED
@@ -120,76 +119,78 @@ class pySerialPort:
                     try:
                         self.Port.open()
                         self.isValid = _ISVALID
-                        self.Debugger.Log("...Success!)
+                        self.Debugger.Log("...Success!")
                         return _OPEN 
-                    except s as serial.SerialException:
-                        self.Debugger.Log("...Failed!)
+                    except s as Exception:
+                        self.Debugger.Log("...Failed!")
                         self.Debugger.Log(str(e))
                         self.isValid = _NOTVALID
                         return _CLOSED
                         
             except e as Exception:
-                self.Debugger.Log("...Failed!)
+                self.Debugger.Log("...Failed!")
                 self.Debugger.Log(str(e))
                 self.isValid = _NOTVALID
                 return _CLOSED
             return _ALREADYOPENED
-        else:
         
 
     def Read(self,bs=1,bBlocking=True,pParent=None):
+        sTmp = None
         if bBlocking == False:
             self.Debugger.Log("Attempting to read '" + str(bs) + "' bytes from port '" + 
                 self.PortFile + "' while not blocking...")
-            threading.Thread(target=_ReadNB, args=(bytes=bs,tParent=pParent)).start()
+            threading.Thread(target=_ReadNB, args=(self,bs,pParent)).start()
         else:
             self.Debugger.Log("Attempting to read '" + str(bs) + "' bytes from port '" + 
                 self.PortFile + "'...")
             try:
                 sTmp = self.Port.read(bs)
-            except e as serial.SerialException:
+                self.Debugger.Log("Read " + str(bs) + " byte: " + str(sTmp))
+                return sTmp
+            except e as Exception:
                 self.Debugger.Log("Error: " + str(e))
                 return None
                 
-            self.Debugger.Log("Read " + str(bs) + " byte: " + str(sTmp)
-            return sTmp
             
             
             
-    def _ReadNB(self,bytes=1,tParent=None):
+            
+    def _ReadNB(self,bBytes=1,cParent=None):
         if tParent == None:
             self.Debugger.Log ("Can't read non blocking because parent is 'None'")
             return
+            
         self.Debugger.Log("Attempting to read '" + str(bs) + "' bytes from port '" + self.PortFile +
             "' in new thread...")
         try:
             sTmp = self.Port.read(bs)
-        except e as serial.SerialException:
+            self.Debugger.Log("Read " + str(bs) + " byte: " + str(sTmp))
+            cParent.ReadData = sTmp
+        except e as Exception:
             self.Debugger.Log("Error: " + str(e))
-            tParent.ReadData = None
-            
-        self.Debugger.Log("Read " + str(bs) + " byte: " + str(sTmp)
-        tParent.ReadData = sTmp
+            cParent.ReadData = None
         
         #Add our call back to our main queue
-        tParent.ReadCallBack()
+        cParent.ReadCallBack()
         
         
     def ReadLine(self,bBlocking=True,pParent=None):
         if bBlocking == False:
             self.Debugger.Log("Attempting to read line from port '" + self.PortFile + 
                 "' while not blocking...")
-            threading.Thread(target=_ReadLineNB, args=(tParent=pParent)).start()
+            threading.Thread(target=_ReadLineNB, args=(self,pParent)).start()
         else:
             self.Debugger.Log("Attempting to read from port '" + self.PortFile + "'...")
             try:
                 sTmp = self.Port.readline()
-            except e as serial.SerialException:
+                self.Debugger.Log("Read: " + str(sTmp))
+                return sTmp
+            except e as Exception:
                 self.Debugger.Log("Error: " + str(e))
                 return None
                 
-            self.Debugger.Log("Read: " + str(sTmp)
-            return sTmp
+            
             
             
             
@@ -200,11 +201,11 @@ class pySerialPort:
         self.Debugger.Log("Attempting to read from port '" + self.PortFile + "' in new thread...")
         try:
             sTmp = self.Port.readline()
-        except e as serial.SerialException:
+        except e as Exception:
             self.Debugger.Log("Error: " + str(e))
             tParent.ReadData = None
             
-        self.Debugger.Log("Read: " + str(sTmp)
+        self.Debugger.Log("Read: " + str(sTmp))
         tParent.ReadData = sTmp
         
         #Add our call back to our main queue
@@ -214,12 +215,12 @@ class pySerialPort:
         if bBlocking == False:
             self.Debugger.Log("Attempting to write to port '" + self.PortFile + 
                 "' while not blocking...")
-            threading.Thread(target=_WriteNB, args=(_sData=sData,tParent=pParent)).start()
+            threading.Thread(target=_WriteNB, args=(self,sData,pParent)).start()
         else:
             self.Debugger.Log("Attempting to write to port '" + self.PortFile + "'...")
             try:
                 sTmp = self.Port.write(sData)
-            except e as serial.SerialException:
+            except e as Exception:
                 self.Debugger.Log("Error: " + str(e))
                 return None
                 
@@ -235,7 +236,7 @@ class pySerialPort:
         self.Debugger.Log("Attempting to write to port '" + self.PortFile + "' in new thread...")
         try:
             sTmp = self.Port.write(_sData)
-        except e as serial.SerialException:
+        except e as Exception:
             self.Debugger.Log("Error: " + str(e))
             tParent.ReadData = None
             
