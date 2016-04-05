@@ -27,25 +27,30 @@ _ALREADYOPENED = 2
 class pySerialPort:
 
     def __init__(self,p=None,pf="/dev/ttyAMA0",pb=9600,pp=PARITY_NONE,pbs=EIGHTBITS,
-                    psb=serial.STOPBITS_ONE,pt=None,pfc=False,phs=False,Debug=True,LogToFile=False,
-                    AutoConnect=False):
+                    psb=serial.STOPBITS_ONE,pt=0,pfc=False,phs=False,Debug=True,LogToFile=False,
+                    AutoConnect=False): 
         self.isValid = _UNTESTED
         self.Debugger = pyDebugger(self,Debug,LogToFile)
         self.Debugger.Log("Initializing Handler...", endd = "")
+        self.__init_SP__(p,pf,pb,pp,pbs,psb,pt,pfc,phs,AutoConnect)
+    
+    def __init_SP__(self,p=None,pf="/dev/ttyAMA0",pb=9600,pp=PARITY_NONE,pbs=EIGHTBITS,
+                    psb=serial.STOPBITS_ONE,pt=0,pfc=False,phs=False,AutoConnect=False):
         #Variables 
+        self.Debugger.Log("Syncronizing serial port settings...",endd='')
         self.Port = p
         self.PortFile = pf
-        self.PortBaud = pb
+        self.PortBaud = int(pb)
         self.PortParity = pp
         self.PortBytes = pbs
-        self.PortStopBits = psb
-        self.PortTimeout = pt
+        self.PortStopBits = float(psb)
+        self.PortTimeout = int(pt)
         self.PortFlowControl = pfc
         self.PortHandshake = phs
-        
+        #print (serial.serialutil.BYTESIZES)
         #check if our port is already there
-        if p == None and AutoConnect == True:
-            self.Port = serial.Serial(pf,pb,pbs,pp,psb,pt,pfc,phs,pt,phs)
+        if p != None and AutoConnect == True:
+            self.Port = serial.Serial(pf,pb,int(pbs),pp,psb,pt,pfc,phs,pt,phs)
             self.Port.port = pf
             self.isValid = _UNTESTED
             self.Debugger.Log("...Success!",PrintName=False)
@@ -54,7 +59,7 @@ class pySerialPort:
                 self.Port = serial.Serial(None,pb,pbs,pp,psb,pt,pfc,phs,pt,phs)
                 self.isValid = _ISVALID    
                 self.Debugger.Log("...Success!",PrintName=False)
-            except e as Exception:
+            except Exception as e:
                 self.Debugger.Log("...Failed!",PrintName=False)
                 self.Debugger.Log(str(e))
                 self.isValid = _NOTVALID 
@@ -72,7 +77,7 @@ class pySerialPort:
                 self.Debugger.Log("...Port successfully closed",PrintName=False)
                 #count as true cause nothing to close!
                 return True
-            except e as Exception:
+            except Exception as e:
                 self.Debugger.Log("...Failed!",PrintName=False)
                 self.Debugger.Log(str(e))
                 return False
@@ -96,7 +101,7 @@ class pySerialPort:
                     else:
                         sOpV = "False"
                 else:
-                    sO13pV = str(self.__dict__[pK])
+                    sOpV = str(self.__dict__[pK])
                 
                 
                 self.Debugger.Log("Updating key '" + pK + "' with value '" + spV +
@@ -106,7 +111,10 @@ class pySerialPort:
                 #Somethings's Fucked up, Error
                 self.Debugger.Log("Error! Trying to update key '" + str(pK) + 
                     "' but it doesn't exist in class!\n***Possible Hack Attack!!!!!")
-     
+        
+        self.__init_SP__(self.Port,self.PortFile,int(self.PortBaud),self.PortParity,
+            int(self.PortBytes), float(self.PortStopBits),int(self.PortTimeout),self.PortFlowControl,
+            self.PortHandshake,AutoConnect=False)
     
     
     def Open(self):
@@ -115,12 +123,12 @@ class pySerialPort:
         if self.Port == None:
             try:
                 self.Port = serial.Serial(self.PortFile,self.PortBaud,self.PortBytes,
-                self.PortStopBits,self.PortParity,self.PortStopBits,self.PortTimeout,
-                self.PortFlowControl,self.PortHandShake,self.PortTimeout,self.PortHandShake)
+                    self.PortStopBits,self.PortParity,self.PortStopBits,self.PortTimeout,
+                    self.PortFlowControl,self.PortHandShake,self.PortTimeout,self.PortHandShake)
                 self.isValid = _ISVALID
                 self.Debugger.Log("...Success!",PrintName=False)
                 return _OPEN 
-            except e as Exception:
+            except Exception as e:
                 self.Debugger.Log("...Failed!",PrintName=False)
                 self.Debugger.Log(str(e))
                 self.isValid = _NOTVALID
@@ -128,23 +136,25 @@ class pySerialPort:
         else:
             try:
                 if self.Port.isOpen() == True:
-                    self.Debugger.Log("...Warning! Port already opened")
+                    self.Debugger.Log("...Warning! Port already opened",PrintName=False)
                     self.isValid = _ISVALID
                     return _ALREADYOPENED
                 else:
                     try:
+                        self.Port.port = self.PortFile
                         self.Port.open()
                         self.isValid = _ISVALID
-                        self.Debugger.Log("...Success!")
+                        self.Debugger.Log("...Success!",PrintName=False)
                         return _OPEN 
-                    except s as Exception:
-                        self.Debugger.Log("...Failed!")
-                        self.Debugger.Log(str(e))
+                    except Exception as s:
+                        self.Debugger.Log("...Failed!",PrintName=False)
+                        print(str(self.Port))
+                        self.Debugger.Log(str(s))
                         self.isValid = _NOTVALID
                         return _CLOSED
                         
-            except e as Exception:
-                self.Debugger.Log("...Failed!")
+            except Exception as e:
+                self.Debugger.Log("...Failed!",PrintName=False)
                 self.Debugger.Log(str(e))
                 self.isValid = _NOTVALID
                 return _CLOSED
@@ -164,7 +174,7 @@ class pySerialPort:
                 sTmp = self.Port.read(bs)
                 self.Debugger.Log("Read " + str(bs) + " byte: " + str(sTmp))
                 return sTmp
-            except e as Exception:
+            except Exception as e:
                 self.Debugger.Log("Error: " + str(e))
                 return None
                 
@@ -183,7 +193,7 @@ class pySerialPort:
             sTmp = self.Port.read(bs)
             self.Debugger.Log("Read " + str(bs) + " byte: " + str(sTmp))
             cParent.ReadData = sTmp
-        except e as Exception:
+        except Exception as e:
             self.Debugger.Log("Error: " + str(e))
             cParent.ReadData = None
         
@@ -200,11 +210,11 @@ class pySerialPort:
             self.Debugger.Log("Attempting to read from port '" + self.PortFile + "'...")
             try:
                 sTmp = self.Port.readline()
-                self.Debugger.Log("Read: " + str(sTmp))
+                self.Debugger.Log("Read: " + sTmp.decode("UTF-8"))
                 return sTmp
-            except e as Exception:
+            except Exception as e:
                 self.Debugger.Log("Error: " + str(e))
-                return None
+                return str(e)
                 
             
             
@@ -217,7 +227,7 @@ class pySerialPort:
         self.Debugger.Log("Attempting to read from port '" + self.PortFile + "' in new thread...")
         try:
             sTmp = self.Port.readline()
-        except e as Exception:
+        except Exception as e:
             self.Debugger.Log("Error: " + str(e))
             tParent.ReadData = None
             
@@ -236,7 +246,7 @@ class pySerialPort:
             self.Debugger.Log("Attempting to write to port '" + self.PortFile + "'...")
             try:
                 sTmp = self.Port.write(sData)
-            except e as Exception:
+            except Exception as e:
                 self.Debugger.Log("Error: " + str(e))
                 return None
                 
@@ -252,7 +262,7 @@ class pySerialPort:
         self.Debugger.Log("Attempting to write to port '" + self.PortFile + "' in new thread...")
         try:
             sTmp = self.Port.write(_sData)
-        except e as Exception:
+        except Exception as e:
             self.Debugger.Log("Error: " + str(e))
             tParent.ReadData = None
             
