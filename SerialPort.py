@@ -48,14 +48,14 @@ class pySerialPort:
             self.Port = serial.Serial(pf,pb,pbs,pp,psb,pt,pfc,phs,pt,phs)
             self.Port.port = pf
             self.isValid = _UNTESTED
-            self.Debugger.Log("...Success!")
+            self.Debugger.Log("...Success!",PrintName=False)
         else:
             try:
                 self.Port = serial.Serial(None,pb,pbs,pp,psb,pt,pfc,phs,pt,phs)
                 self.isValid = _ISVALID    
-                self.Debugger.Log("...Success!")
+                self.Debugger.Log("...Success!",PrintName=False)
             except e as Exception:
-                self.Debugger.Log("...Failed!")
+                self.Debugger.Log("...Failed!",PrintName=False)
                 self.Debugger.Log(str(e))
                 self.isValid = _NOTVALID 
             
@@ -63,32 +63,48 @@ class pySerialPort:
     def Close(self):
         self.Debugger.Log("Attempting to close port " + self.PortFile + "...", endd='')
         if self.Port == None:
-            self.Debugger.Log("...Warning! Nothing to close, port is null...reporting True")
+            self.Debugger.Log("...Warning! Nothing to close, port is null...reporting True",PrintName=False)
             #count as true cause nothing to close!
             return True
         else:
             try:
                 self.Port.close()
-                self.Debugger.Log("...Port successfully closed")
+                self.Debugger.Log("...Port successfully closed",PrintName=False)
                 #count as true cause nothing to close!
                 return True
             except e as Exception:
-                self.Debugger.Log("...Failed!")
+                self.Debugger.Log("...Failed!",PrintName=False)
                 self.Debugger.Log(str(e))
                 return False
             
 
     # a quick way to get settings loaded into the class
-    def LoadSettings(self,dDict):
+    def LoadSettings(self,dDict, IgnoreError=False):
         self.Debugger.Log("Attempting to load settings...")
-        for pK,pV in enumerate(dDict):
+        for pK in dDict:
             if pK in self.__dict__:
-                self.Debugger.Log("Updating key '" + pK + "' with value '" + pV +
-                    "', old value was '" + self.__dict__[pK] + "'")
-                self.__dict__[pK] = pV
+                if isinstance(dDict[pK],bool):
+                    if dDict[pK] == True:
+                        spV = "True"
+                    else:
+                        spV = "False"
+                else:
+                    spV = str(dDict[pK])
+                if isinstance(self.__dict__[pK],bool):
+                    if self.__dict__[pK] == True:
+                        sOpV = "True"
+                    else:
+                        sOpV = "False"
+                else:
+                    sO13pV = str(self.__dict__[pK])
+                
+                
+                self.Debugger.Log("Updating key '" + pK + "' with value '" + spV +
+                    "', old value was '" + sOpV + "'")
+                self.__dict__[pK] = dDict[pK]
             else:
                 #Somethings's Fucked up, Error
-                self.Debugger.Log("Error! Trying to update key '" + pK + 
+                self.Debugger.Log("Error! Trying to update key '" + str(pK) + 
                     "' but it doesn't exist in class!\n***Possible Hack Attack!!!!!")
      
     
@@ -102,10 +118,10 @@ class pySerialPort:
                 self.PortStopBits,self.PortParity,self.PortStopBits,self.PortTimeout,
                 self.PortFlowControl,self.PortHandShake,self.PortTimeout,self.PortHandShake)
                 self.isValid = _ISVALID
-                self.Debugger.Log("...Success!")
+                self.Debugger.Log("...Success!",PrintName=False)
                 return _OPEN 
             except e as Exception:
-                self.Debugger.Log("...Failed!")
+                self.Debugger.Log("...Failed!",PrintName=False)
                 self.Debugger.Log(str(e))
                 self.isValid = _NOTVALID
                 return _CLOSED
