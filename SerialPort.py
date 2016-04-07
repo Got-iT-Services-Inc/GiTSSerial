@@ -210,11 +210,15 @@ class pySerialPort:
             self.Debugger.Log("Attempting to read from port '" + self.PortFile + "'...")
             try:
                 sTmp = self.Port.readline()
-                self.Debugger.Log("Read: " + sTmp.decode("UTF-8"))
+                if isinstance(sTmp,str):
+                    self.Debugger.Log("Read: " + sTmp)
+                else:
+                    self.Debugger.Log("Read: " + sTmp.decode("utf-8"))
+                
                 return sTmp
             except Exception as e:
                 self.Debugger.Log("Error: " + str(e))
-                return str(e)
+                return str(e).encode("utf-8")
                 
             
             
